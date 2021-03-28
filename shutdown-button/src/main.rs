@@ -1,6 +1,7 @@
 extern crate rust_gpiozero;
 use std::process;
 use std::env;
+use std::{thread, time};
 use rust_gpiozero::{Button, LED};
 
 fn main() {
@@ -11,23 +12,31 @@ fn main() {
         process::exit(1);
     }
 
-    let led_pin: u8 = args[2].parse::<u8>().unwrap();
-    let button_pin: u8 = args[3].parse::<u8>().unwrap();
+    {
+        thread::sleep(time::Duration::from_millis(100));
+    }
+    
+    let led = LED::new(args[1].parse::<u8>().unwrap());
+    let mut button = Button::new(args[2].parse::<u8>().unwrap());
 
-    set_led(led_pin);
-    wait_for_button_press(button_pin);
+    set_led(&led, true);
+    wait_for_button_press(&mut button);
+    set_led(&led, false);
+    {
     shutdown();
+    }
 }
 
-fn set_led(pin: u8) {
-    let led = LED::new(pin);
-    led.on();
+fn set_led(led: &rust_gpiozero::LED, is_on: bool) {
+    if is_on {
+        led.on();
+    } else {
+        led.off();
+    }
 }
 
-fn wait_for_button_press(pin: u8) {
-    let mut button = Button::new(pin);
-    Button::wait_for_press(&mut button, None);
-
+fn wait_for_button_press(button: &mut rust_gpiozero::Button) {
+    Button::wait_for_press(button, None);
 }
 
 fn shutdown() {
